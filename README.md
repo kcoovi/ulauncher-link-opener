@@ -1,4 +1,4 @@
-# uLauncher Link Opener Extension for Linux Systems
+# uLauncher Link Opener Extension
 
 Quickly open websites in your system's **default browser** using a simple keyword shortcut.
 
