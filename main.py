@@ -33,7 +33,7 @@ class KeywordQueryEventListener(EventListener):
         return RenderResultListAction([
             ExtensionResultItem(
                 icon='images/icon.png',
-                name=f"Open in default browser",
+                name=f"Open in browser",
                 description=f"Will open: {completed_url}",
                 on_enter=ExtensionCustomAction(
                     {"url": completed_url}, 
