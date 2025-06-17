@@ -1,6 +1,6 @@
 {
     "required_api_version": "^2.0.0",
-    "name": "Open in Default Browser",
+    "name": "Link Opener",
     "description": "Direct URL opening in default browser",
     "developer_name": "Kevin Coovi",
     "icon": "images/icon.png",
