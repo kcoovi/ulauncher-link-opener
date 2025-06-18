@@ -1,9 +1,9 @@
-# Smart URL Opener - Ulauncher Extension for Linux
 
+# Smart URL Opener - Ulauncher Extension for Linux
 An intelligent Ulauncher extension that provides smart URL completion, domain shortcuts, and seamless web browsing with enhanced local development support.
 - Download [ULauncher](https://ulauncher.io/) application
-## Features
 
+## Features
 ### Smart URL Completion
 - **Automatic Protocol Detection**: Automatically adds `https://` for domains, `http://` for localhost
 - **File Path Support**: Handles local file paths with `file://` protocol
@@ -33,14 +33,13 @@ Built-in shortcuts for popular websites:
 - **Error Handling**: Graceful error handling with search fallbacks
 
 ## Installation
-
 ### Method 1: Manual Installation
 1. Clone or download this repository
 2. Copy the extension folder to your Ulauncher extensions directory:
 ```bash
-   ~/.local/share/ulauncher/extensions/
+~/.local/share/ulauncher/extensions/
 ```
-3. Restart Ulaunicher or go to Preferences → Extensions → Reload Extensions
+3. Restart Ulauncher or go to Preferences → Extensions → Reload Extensions
 
 ### Method 2: From Ulauncher Extensions Directory
 1. Open Ulauncher Preferences
@@ -48,10 +47,10 @@ Built-in shortcuts for popular websites:
 3. Click "Add Extension"
 4. Enter the extension URL from Github or browse for the local folder
 ```bash
-   https://github.com/kcoovi/ulauncher-link-opener
-   ```
-## Usage
+https://github.com/kcoovi/ulauncher-link-opener
+```
 
+## Usage
 ### Basic Usage
 1. Open Ulauncher (default: `Ctrl+Space`)
 2. Type your keyword (default: `go`) followed by a space
@@ -59,7 +58,6 @@ Built-in shortcuts for popular websites:
 4. Select from the intelligent suggestions
 
 ### Examples
-
 | Input | Result |
 |-------|--------|
 |`go` | Defaults to https://google.com |
@@ -74,7 +72,6 @@ Built-in shortcuts for popular websites:
 
 ### Domain Shortcuts
 The extension includes shortcuts for popular websites:
-
 ```
 gh, github     → github.com
 yt, youtube    → youtube.com  
@@ -92,19 +89,47 @@ x, twitter     → x.com/twitter.com
 linkedin       → linkedin.com
 ```
 
-## File Structure
+## Gallery
+<div align="center">
+  <table>
+    <tr>
+      <td><img src="images/1.png" alt="Email Handling" width="300"></td>
+      <td><img src="images/2.png" alt="Local File Handling" width="300"></td>
+      <td><img src="images/3.png" alt="Domain Shortcut" width="300"></td>
+    </tr>
+    <tr>
+      <td align="center"><b>Email Handling</b><br>Input: <code>go example@gmail.com</code><br>Opens email client or searches Google</td>
+      <td align="center"><b>Local File Handling</b><br>Input: <code>go file:///home/user/videos/Scre</code><br>Opens local files directly</td>
+      <td align="center"><b>Domain Shortcut</b><br>Input: <code>go yt</code><br>YouTube shortcut with search fallback</td>
+    </tr>
+    <tr>
+      <td><img src="images/4.png" alt="Localhost Development" width="300"></td>
+      <td><img src="images/5.png" alt="Domain Suggestions" width="300"></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td align="center"><b>Localhost Development</b><br>Input: <code>go localhost:</code><br>Automatic HTTP protocol for dev servers</td>
+      <td align="center"><b>Domain Suggestions</b><br>Input: <code>go wordpress</code><br>Multiple TLD options (.com, .org, .net)</td>
+      <td></td>
+    </tr>
+  </table>
+</div>
 
+## File Structure
 ```
 smart-url-opener/
 ├── main.py              
 ├── manifest.json        
 ├── README.md           
 └── images/
-    └── icon.png        
+    ├── 1.png
+    ├── 2.png
+    ├── 3.png
+    ├── 4.png
+    └── 5.png
 ```
 
 ## Advanced Features
-
 ### Smart Protocol Selection
 - **HTTPS by default** for public domains
 - **HTTP for local development** (localhost, 127.0.0.1, 192.168.x.x, 10.x.x.x)
@@ -127,7 +152,6 @@ The extension recognizes common development ports and automatically uses HTTP:
 - User-friendly error messages
 
 ## Troubleshooting
-
 ### Extension Not Loading
 1. Check that the extension is in the correct directory
 2. Verify all required files are present
@@ -139,7 +163,6 @@ The extension recognizes common development ports and automatically uses HTTP:
 3. Try opening URLs manually to test browser functionality
 
 ## Development
-
 ### Requirements
 - Python 3.6+
 - Ulauncher 5.0+
@@ -153,11 +176,9 @@ The extension recognizes common development ports and automatically uses HTTP:
 5. Submit a pull request
 
 ## License
-
 This project is open source. Feel free to modify and distribute according to your needs.
 
 ## Changelog
-
 ### Version 2.0.0
 - Complete rewrite with improved URL handling
 - Added domain shortcuts system  
