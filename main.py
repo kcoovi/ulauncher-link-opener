@@ -1,4 +1,3 @@
-
 from ulauncher.api.client.Extension import Extension
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.shared.event import KeywordQueryEvent, ItemEnterEvent
@@ -11,134 +10,157 @@ import re
 import logging
 from urllib.parse import urlparse, quote
 import socket
+from typing import List, Tuple, Optional
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class URLHandler:
-    """Enhanced URL handling with validation and smart completion"""
+    """Enhanced URL handling with intelligent completion and validation"""
+    
+    # Common domain shortcuts
+    DOMAIN_SHORTCUTS = {
+        'gh': 'github.com',
+        'github': 'github.com',
+        'google': 'google.com',
+        'gmail': 'gmail.com',
+        'yt': 'youtube.com',
+        'youtube': 'youtube.com',
+        'so': 'stackoverflow.com',
+        'stackoverflow': 'stackoverflow.com',
+        'reddit': 'reddit.com',
+        'twitter': 'twitter.com',
+        'x': 'x.com',
+        'facebook': 'facebook.com',
+        'fb': 'facebook.com',
+        'linkedin': 'linkedin.com',
+        'instagram': 'instagram.com',
+        'ig': 'instagram.com',
+        'wiki': 'wikipedia.org',
+        'wikipedia': 'wikipedia.org',
+        'docs': 'docs.google.com',
+        'drive': 'drive.google.com',
+        'maps': 'maps.google.com',
+        'translate': 'translate.google.com'
+    }
     
     @staticmethod
-    def is_valid_domain(domain):
-        """Check if domain is valid"""
+    def is_valid_domain(domain: str) -> bool:
+        """Validate domain format"""
+        if not domain or len(domain) > 253:
+            return False
+        
         domain_pattern = r'^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'
         return re.match(domain_pattern, domain) is not None
     
     @staticmethod
-    def is_reachable_ip(ip, port=80, timeout=1):
-        """Quick check if IP is reachable"""
-        try:
-            socket.setdefaulttimeout(timeout)
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            result = sock.connect_ex((ip, port))
-            sock.close()
-            return result == 0
-        except:
-            return False
+    def is_local_network_ip(ip: str) -> bool:
+        """Check if IP is in local network ranges"""
+        local_ranges = ['192.168.', '10.', '172.16.', '172.17.', '172.18.', '172.19.', 
+                       '172.20.', '172.21.', '172.22.', '172.23.', '172.24.', '172.25.',
+                       '172.26.', '172.27.', '172.28.', '172.29.', '172.30.', '172.31.']
+        return ip == '127.0.0.1' or any(ip.startswith(prefix) for prefix in local_ranges)
     
     @staticmethod
-    def complete_url(url):
-        """Enhanced URL completion with better validation"""
-        if not url or not url.strip():
+    def is_development_port(port: int) -> bool:
+        """Check if port is commonly used for development"""
+        dev_ports = {3000, 3001, 4200, 5000, 5173, 8000, 8080, 8888, 9000, 9001}
+        return port in dev_ports
+    
+    @staticmethod
+    def complete_url(query: str) -> str:
+        """Enhanced URL completion with intelligent handling"""
+        if not query or not query.strip():
             return "https://google.com"
         
-        url = url.strip()
+        query = query.strip()
         
         # Already has protocol
-        if re.match(r'^\w+://', url):
-            return url
+        if re.match(r'^\w+://', query):
+            return query
         
-        # File path handling with better validation
-        if url.startswith(('/', './', '../', '~')):
+        # File path handling
+        if query.startswith(('/', './', '../', '~')):
             try:
-                if url.startswith('~'):
-                    url = os.path.expanduser(url)
-                abs_path = os.path.abspath(url)
-                if os.path.exists(abs_path):
-                    return f"file://{abs_path}"
-                else:
-                    logger.warning(f"File path does not exist: {abs_path}")
-                    return f"file://{abs_path}"  # Still return it, let browser handle
+                if query.startswith('~'):
+                    query = os.path.expanduser(query)
+                abs_path = os.path.abspath(query)
+                return f"file://{abs_path}"
             except Exception as e:
                 logger.error(f"Error processing file path: {e}")
-                return f"https://google.com/search?q={quote(url)}"
+                return f"https://google.com/search?q={quote(query)}"
         
-        # IPv4 address with enhanced validation
+        # IPv4 address handling
         ipv4_pattern = r'^(\d{1,3}\.){3}\d{1,3}(:\d+)?$'
-        if re.match(ipv4_pattern, url):
-            ip_parts = url.split(':')
+        if re.match(ipv4_pattern, query):
+            ip_parts = query.split(':')
             ip = ip_parts[0]
             port = int(ip_parts[1]) if len(ip_parts) > 1 else 80
             
             # Validate IP octets
-            octets = ip.split('.')
-            if all(0 <= int(octet) <= 255 for octet in octets):
-                # Use http for local networks, https for others
-                if ip.startswith(('192.168.', '10.', '172.')) or ip == '127.0.0.1':
-                    return f'http://{url}'
-                return f'https://{url}'
-            else:
-                return f"https://google.com/search?q={quote(url)}"
+            try:
+                octets = [int(octet) for octet in ip.split('.')]
+                if all(0 <= octet <= 255 for octet in octets):
+                    protocol = 'http' if URLHandler.is_local_network_ip(ip) or URLHandler.is_development_port(port) else 'https'
+                    return f'{protocol}://{query}'
+            except ValueError:
+                pass
+            
+            return f"https://google.com/search?q={quote(query)}"
         
         # Localhost variants
-        if url.startswith('localhost') or re.match(r'^localhost:\d+', url):
-            return f'http://{url}'
+        if query.startswith('localhost') or re.match(r'^localhost:\d+', query):
+            return f'http://{query}'
         
-        # Handle common development ports
-        dev_port_pattern = r'^.+:(3000|3001|4200|5000|8000|8080|8888|9000)$'
-        if re.match(dev_port_pattern, url) and not url.startswith('http'):
-            return f'http://{url}'
+        # Development ports on any host
+        if ':' in query:
+            try:
+                host, port_str = query.rsplit(':', 1)
+                port = int(port_str)
+                if URLHandler.is_development_port(port):
+                    return f'http://{query}'
+            except ValueError:
+                pass
         
-        # Email address - open in default email client
+        # Email address
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        if re.match(email_pattern, url):
-            return f'mailto:{url}'
+        if re.match(email_pattern, query):
+            return f'mailto:{query}'
         
-        # Plain single word - smart completion
-        if re.match(r'^[\w-]+$', url):
-            common_domains = {
-                'github': 'github.com',
-                'google': 'google.com',
-                'youtube': 'youtube.com',
-                'stackoverflow': 'stackoverflow.com',
-                'reddit': 'reddit.com',
-                'twitter': 'twitter.com',
-                'facebook': 'facebook.com',
-                'linkedin': 'linkedin.com',
-                'instagram': 'instagram.com'
-            }
-            
-            if url.lower() in common_domains:
-                return f'https://{common_domains[url.lower()]}'
-            
-            # Try .com first
-            return f'https://{url}.com'
+        # Domain shortcuts
+        query_lower = query.lower()
+        if query_lower in URLHandler.DOMAIN_SHORTCUTS:
+            return f'https://{URLHandler.DOMAIN_SHORTCUTS[query_lower]}'
         
-        # Contains domain-like structure
-        if '.' in url and URLHandler.is_valid_domain(url):
-            return f'https://{url}'
+        # Single word without dots - try common extensions
+        if re.match(r'^[\w-]+$', query) and len(query) > 1:
+            return f'https://{query}.com'
         
-        # Search query fallback
-        if ' ' in url or len(url.split()) > 1:
-            return f"https://google.com/search?q={quote(url)}"
+        # Valid domain structure
+        if '.' in query and URLHandler.is_valid_domain(query):
+            return f'https://{query}'
+        
+        # Multi-word or complex queries - search
+        if ' ' in query or len(query) < 2 or not re.match(r'^[\w.-]+$', query):
+            return f"https://google.com/search?q={quote(query)}"
         
         # Default: try as HTTPS domain
-        return f'https://{url}' if not url.startswith(('http://', 'https://')) else url
+        return f'https://{query}'
 
 
-class DefaultBrowserExtension(Extension):
-    """Enhanced Ulauncher extension for smart URL opening"""
+class SmartBrowserExtension(Extension):
+    """Smart Ulauncher extension for intelligent URL opening"""
     
     def __init__(self):
-        super(DefaultBrowserExtension, self).__init__()
+        super(SmartBrowserExtension, self).__init__()
         self.subscribe(KeywordQueryEvent, KeywordQueryEventListener())
         self.subscribe(ItemEnterEvent, ItemEnterEventListener())
-        logger.info("DefaultBrowserExtension initialized")
+        logger.info("SmartBrowserExtension initialized")
 
 
 class KeywordQueryEventListener(EventListener):
-    """Enhanced event listener with multiple URL suggestions"""
+    """Event listener with smart URL suggestions"""
     
     def on_event(self, event, extension):
         try:
@@ -148,8 +170,8 @@ class KeywordQueryEventListener(EventListener):
                 return RenderResultListAction([
                     ExtensionResultItem(
                         icon='images/icon.png',
-                        name="Enter a URL or search term",
-                        description="Type a URL, domain, file path, or search query",
+                        name="Smart URL Opener",
+                        description="Type a URL, domain, search term, or use shortcuts (gh, yt, etc.)",
                         on_enter=ExtensionCustomAction(
                             {"url": "https://google.com"}, 
                             keep_app_open=False
@@ -160,11 +182,12 @@ class KeywordQueryEventListener(EventListener):
             primary_url = URLHandler.complete_url(query)
             results = []
             
-            # Primary suggestion
+            # Primary suggestion with smart description
+            description = self._get_primary_description(query, primary_url)
             results.append(ExtensionResultItem(
                 icon='images/icon.png',
-                name=f"Open: {primary_url}",
-                description=f"Primary suggestion",
+                name=self._format_url_display(primary_url),
+                description=description,
                 on_enter=ExtensionCustomAction(
                     {"url": primary_url}, 
                     keep_app_open=False
@@ -173,18 +196,19 @@ class KeywordQueryEventListener(EventListener):
             
             # Alternative suggestions
             alternatives = self._get_alternatives(query, primary_url)
-            for alt_url, description in alternatives:
+            for alt_url, alt_description in alternatives:
                 results.append(ExtensionResultItem(
                     icon='images/icon.png',
-                    name=f"Open: {alt_url}",
-                    description=description,
+                    name=self._format_url_display(alt_url),
+                    description=alt_description,
                     on_enter=ExtensionCustomAction(
                         {"url": alt_url}, 
                         keep_app_open=False
                     )
                 ))
             
-            return RenderResultListAction(results)
+            # Limit results to prevent overwhelming the user
+            return RenderResultListAction(results[:5])
             
         except Exception as e:
             logger.error(f"Error in KeywordQueryEventListener: {e}")
@@ -192,7 +216,7 @@ class KeywordQueryEventListener(EventListener):
                 ExtensionResultItem(
                     icon='images/icon.png',
                     name="Error occurred",
-                    description=f"Failed to process query: {str(e)}",
+                    description="Failed to process query. Opening Google as fallback.",
                     on_enter=ExtensionCustomAction(
                         {"url": "https://google.com"}, 
                         keep_app_open=False
@@ -200,36 +224,71 @@ class KeywordQueryEventListener(EventListener):
                 )
             ])
     
-    def _get_alternatives(self, query, primary_url):
-        """Generate alternative URL suggestions"""
+    def _get_primary_description(self, query: str, url: str) -> str:
+        """Generate description for primary suggestion"""
+        if url.startswith('mailto:'):
+            return "Open in email client"
+        elif url.startswith('file://'):
+            return "Open local file"
+        elif 'google.com/search' in url:
+            return "Search on Google"
+        elif url.startswith('http://localhost') or 'http://127.0.0.1' in url:
+            return "Open local development server"
+        elif any(port in url for port in [':3000', ':8000', ':8080']):
+            return "Open development server"
+        else:
+            return "Open website"
+    
+    def _format_url_display(self, url: str) -> str:
+        """Format URL for display"""
+        if len(url) > 60:
+            parsed = urlparse(url)
+            if parsed.netloc:
+                return f"{parsed.scheme}://{parsed.netloc}/..."
+            return url[:57] + "..."
+        return url
+    
+    def _get_alternatives(self, query: str, primary_url: str) -> List[Tuple[str, str]]:
+        """Generate smart alternative suggestions"""
         alternatives = []
         
-        # Search alternative
-        if not query.startswith(('http://', 'https://', 'file://', 'mailto:')):
+        # Always offer search if primary isn't already a search
+        if 'google.com/search' not in primary_url:
             search_url = f"https://google.com/search?q={quote(query)}"
-            if search_url != primary_url:
-                alternatives.append((search_url, "Search on Google"))
-        
-        # Protocol alternatives
-        if primary_url.startswith('https://'):
-            http_version = primary_url.replace('https://', 'http://', 1)
-            alternatives.append((http_version, "Try HTTP instead"))
-        elif primary_url.startswith('http://'):
-            https_version = primary_url.replace('http://', 'https://', 1)
-            alternatives.append((https_version, "Try HTTPS instead"))
+            alternatives.append((search_url, "Search on Google"))
         
         # Domain alternatives for single words
-        if re.match(r'^[\w-]+$', query) and not query.lower() in ['github', 'google', 'youtube']:
-            if not primary_url.endswith('.com'):
-                alternatives.append((f"https://{query}.com", "Try .com domain"))
-            alternatives.append((f"https://{query}.org", "Try .org domain"))
-            alternatives.append((f"https://{query}.net", "Try .net domain"))
+        if re.match(r'^[\w-]+$', query) and len(query) > 1:
+            query_lower = query.lower()
+            
+            # If not already using a shortcut, suggest alternatives
+            if query_lower not in URLHandler.DOMAIN_SHORTCUTS:
+                if not primary_url.endswith('.org'):
+                    alternatives.append((f"https://{query}.org", "Try .org domain"))
+                if not primary_url.endswith('.net'):
+                    alternatives.append((f"https://{query}.net", "Try .net domain"))
+                if not primary_url.endswith('.io'):
+                    alternatives.append((f"https://{query}.io", "Try .io domain"))
         
-        return alternatives[:3]  # Limit to 3 alternatives
+        # HTTPS upgrade for HTTP URLs (but not HTTP to HTTPS downgrade)
+        if primary_url.startswith('http://') and not any(local in primary_url for local in ['localhost', '127.0.0.1', '192.168.']):
+            https_version = primary_url.replace('http://', 'https://', 1)
+            alternatives.append((https_version, "Try HTTPS version"))
+        
+        # Special shortcuts suggestions
+        if len(query) > 2 and not query.lower() in URLHandler.DOMAIN_SHORTCUTS:
+            matching_shortcuts = [k for k in URLHandler.DOMAIN_SHORTCUTS.keys() 
+                                 if k.startswith(query.lower()) or query.lower() in k]
+            for shortcut in matching_shortcuts[:2]:
+                shortcut_url = f"https://{URLHandler.DOMAIN_SHORTCUTS[shortcut]}"
+                if shortcut_url != primary_url:
+                    alternatives.append((shortcut_url, f"Shortcut: {shortcut} → {URLHandler.DOMAIN_SHORTCUTS[shortcut]}"))
+        
+        return alternatives[:3]  # Limit alternatives
 
 
 class ItemEnterEventListener(EventListener):
-    """Enhanced event listener with better error handling"""
+    """Event listener for handling URL opening"""
     
     def on_event(self, event, extension):
         try:
@@ -242,10 +301,10 @@ class ItemEnterEventListener(EventListener):
             
             logger.info(f"Opening URL: {url}")
             
-            # Validate URL before opening
+            # Additional validation before opening
             try:
                 parsed = urlparse(url)
-                if not parsed.scheme and not url.startswith('file://'):
+                if not parsed.scheme and not url.startswith(('file://', 'mailto:')):
                     url = f"https://{url}"
                 
                 webbrowser.open(url)
@@ -253,7 +312,7 @@ class ItemEnterEventListener(EventListener):
                 
             except Exception as browser_error:
                 logger.error(f"Failed to open URL {url}: {browser_error}")
-                # Fallback: try to open as search query
+                # Fallback: search query
                 fallback_url = f"https://google.com/search?q={quote(str(url))}"
                 webbrowser.open(fallback_url)
                 logger.info(f"Opened fallback search: {fallback_url}")
@@ -267,7 +326,7 @@ class ItemEnterEventListener(EventListener):
 
 if __name__ == '__main__':
     try:
-        extension = DefaultBrowserExtension()
+        extension = SmartBrowserExtension()
         extension.run()
     except Exception as e:
         logger.error(f"Failed to start extension: {e}")
