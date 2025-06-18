@@ -93,23 +93,23 @@ linkedin       → linkedin.com
 <div align="center">
   <table>
     <tr>
-      <td><img src="images/1.png" alt="Email Handling" width="400"></td>
-      <td><img src="images/2.png" alt="Local File Handling" width="400"></td>
-      <td><img src="images/3.png" alt="Domain Shortcut" width="400"></td>
+      <td><img src="images/1.png" alt="Email Handling" width="700"></td>
+      <td><img src="images/2.png" alt="Local File Handling" width="700"></td>
+      <td><img src="images/3.png" alt="Domain Shortcut" width="700"></td>
     </tr>
     <tr>
-      <td align="center"><b>Email Handling</b>Opens email client or searches Google</td>
-      <td align="center"><b>Local File Handling</b>Opens local files directly</td>
-      <td align="center"><b>Domain Shortcut</b>YouTube shortcut with search fallback</td>
+      <td align="center"><b>Email Handling</b></td>
+      <td align="center"><b>Local File Handling</b></td>
+      <td align="center"><b>Domain Shortcut</b></td>
     </tr>
     <tr>
-      <td><img src="images/4.png" alt="Localhost Development" width="400"></td>
-      <td><img src="images/5.png" alt="Domain Suggestions" width="400"></td>
+      <td><img src="images/4.png" alt="Localhost Development" width="700"></td>
+      <td><img src="images/5.png" alt="Domain Suggestions" width="700"></td>
       <td></td>
     </tr>
     <tr>
-      <td align="center"><b>Localhost Development</b>Automatic HTTP protocol for dev servers</td>
-      <td align="center"><b>Domain Suggestions</b>Multiple TLD options (.com, .org, .net)</td>
+      <td align="center"><b>Smart handling of localhost and development ports</b></td>
+      <td align="center"><b>Multiple domain suggestions and intelligent completion</b></td>
       <td></td>
     </tr>
   </table>
