@@ -60,6 +60,7 @@ Built-in shortcuts for popular websites:
 
 | Input | Result |
 |-------|--------|
+|`go` | Defaults to https://google.com |
 | `go github.com` | Opens https://github.com |
 | `go gh` | Opens https://github.com (shortcut) |
 | `go localhost:3000` | Opens http://localhost:3000 |
