@@ -93,23 +93,23 @@ linkedin       → linkedin.com
 <div align="center">
   <table>
     <tr>
-      <td><img src="images/1.png" alt="Email Handling" width="300"></td>
-      <td><img src="images/2.png" alt="Local File Handling" width="300"></td>
-      <td><img src="images/3.png" alt="Domain Shortcut" width="300"></td>
+      <td><img src="images/1.png" alt="Email Handling" width="400"></td>
+      <td><img src="images/2.png" alt="Local File Handling" width="400"></td>
+      <td><img src="images/3.png" alt="Domain Shortcut" width="400"></td>
     </tr>
     <tr>
-      <td align="center"><b>Email Handling</b><br>Input: <code>go example@gmail.com</code><br>Opens email client or searches Google</td>
-      <td align="center"><b>Local File Handling</b><br>Input: <code>go file:///home/user/videos/Scre</code><br>Opens local files directly</td>
-      <td align="center"><b>Domain Shortcut</b><br>Input: <code>go yt</code><br>YouTube shortcut with search fallback</td>
+      <td align="center"><b>Email Handling</b>Opens email client or searches Google</td>
+      <td align="center"><b>Local File Handling</b>Opens local files directly</td>
+      <td align="center"><b>Domain Shortcut</b>YouTube shortcut with search fallback</td>
     </tr>
     <tr>
-      <td><img src="images/4.png" alt="Localhost Development" width="300"></td>
-      <td><img src="images/5.png" alt="Domain Suggestions" width="300"></td>
+      <td><img src="images/4.png" alt="Localhost Development" width="400"></td>
+      <td><img src="images/5.png" alt="Domain Suggestions" width="400"></td>
       <td></td>
     </tr>
     <tr>
-      <td align="center"><b>Localhost Development</b><br>Input: <code>go localhost:</code><br>Automatic HTTP protocol for dev servers</td>
-      <td align="center"><b>Domain Suggestions</b><br>Input: <code>go wordpress</code><br>Multiple TLD options (.com, .org, .net)</td>
+      <td align="center"><b>Localhost Development</b>Automatic HTTP protocol for dev servers</td>
+      <td align="center"><b>Domain Suggestions</b>Multiple TLD options (.com, .org, .net)</td>
       <td></td>
     </tr>
   </table>
