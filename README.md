@@ -46,8 +46,10 @@ Built-in shortcuts for popular websites:
 1. Open Ulauncher Preferences
 2. Go to Extensions tab
 3. Click "Add Extension"
-4. Enter the extension URL or browse for the local folder
-
+4. Enter the extension URL from Github or browse for the local folder
+```bash
+   https://github.com/kcoovi/ulauncher-link-opener
+   ```
 ## Usage
 
 ### Basic Usage
