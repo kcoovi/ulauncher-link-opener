@@ -1,53 +1,13 @@
 {
-  "required_api_version": "^2.0.0",
-  "name": "Smart URL Opener",
-  "description": "Intelligent URL completion and opening with shortcuts, local development support, and smart suggestions",
-  "developer_name": "Your Name",
-  "icon": "images/icon.png",
-  "options": {
-    "query_debounce": 0.1
-  },
-  "preferences": [
-    {
-      "id": "keyword",
-      "type": "keyword",
-      "name": "Keyword",
-      "description": "Keyword to trigger the extension",
-      "default_value": "go"
-    },
-    {
-      "id": "enable_shortcuts",
-      "type": "select",
-      "name": "Enable Domain Shortcuts",
-      "description": "Enable shortcuts like 'gh' for github.com, 'yt' for youtube.com",
-      "default_value": "true",
-      "options": [
-        {"value": "true", "text": "Enabled"},
-        {"value": "false", "text": "Disabled"}
-      ]
-    },
-    {
-      "id": "prefer_https",
-      "type": "select",
-      "name": "Prefer HTTPS",
-      "description": "Default to HTTPS for domain completions (except localhost)",
-      "default_value": "true",
-      "options": [
-        {"value": "true", "text": "Enabled"},
-        {"value": "false", "text": "Disabled"}
-      ]
-    },
-    {
-      "id": "max_suggestions",
-      "type": "select",
-      "name": "Maximum Suggestions",
-      "description": "Maximum number of URL suggestions to show",
-      "default_value": "5",
-      "options": [
-        {"value": "3", "text": "3 suggestions"},
-        {"value": "5", "text": "5 suggestions"},
-        {"value": "7", "text": "7 suggestions"}
-      ]
-    }
-  ]
+    "required_api_version": "^2.0.0",
+    "name": "Smart URL Opener",
+    "description": "Intelligent URL completion and opening with shortcuts, local development support, and smart suggestions",
+    "developer_name": "Kevin Coovi",
+    "icon": "images/icon.png",
+    "preferences": [{
+        "id": "browser_kw",
+        "type": "keyword",
+        "name": "Open URL",
+        "default_value": "go"
+    }]
 }
