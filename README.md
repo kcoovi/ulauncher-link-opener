@@ -1,7 +1,7 @@
 
-# Smart URL Opener - Ulauncher Extension for Linux
-An intelligent Ulauncher extension that provides smart URL completion, domain shortcuts, and seamless web browsing with enhanced local development support.
-- Download [ULauncher](https://ulauncher.io/) application
+# Smart URL Opener - Ulauncher Extension
+An intelligent Ulauncher extension that provides smart URL completion, domain shortcuts, and seamless web browsing with enhanced local development support. 
+- Download [ULauncher](https://ulauncher.io/) application (Spotlight Search for Linux)
 
 ## Features
 ### Smart URL Completion
