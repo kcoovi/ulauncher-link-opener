@@ -1,6 +1,6 @@
 from ulauncher.api.client.Extension import Extension
 from ulauncher.api.client.EventListener import EventListener
-from ulauncher.api.shared.event import KeywordQueryEvent, ItemEnterEvent
+from ulauncher.api.shared.event import KeywordQueryEvent, ItemEnterEvent, PreferencesEvent, PreferencesUpdateEvent
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 from ulauncher.api.shared.action.RenderResultListAction import RenderResultListAction
 from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction
@@ -68,8 +68,8 @@ class URLHandler:
         dev_ports = {3000, 3001, 4200, 5000, 5173, 8000, 8080, 8888, 9000, 9001}
         return port in dev_ports
     
-    @staticmethod
-    def complete_url(query: str) -> str:
+    @classmethod
+    def complete_url(cls, query: str, prefer_https: bool = True, enable_shortcuts: bool = True) -> str:
         """Enhanced URL completion with intelligent handling"""
         if not query or not query.strip():
             return "https://google.com"
@@ -102,7 +102,7 @@ class URLHandler:
             try:
                 octets = [int(octet) for octet in ip.split('.')]
                 if all(0 <= octet <= 255 for octet in octets):
-                    protocol = 'http' if URLHandler.is_local_network_ip(ip) or URLHandler.is_development_port(port) else 'https'
+                    protocol = 'http' if cls.is_local_network_ip(ip) or cls.is_development_port(port) else 'https'
                     return f'{protocol}://{query}'
             except ValueError:
                 pass
@@ -118,7 +118,7 @@ class URLHandler:
             try:
                 host, port_str = query.rsplit(':', 1)
                 port = int(port_str)
-                if URLHandler.is_development_port(port):
+                if cls.is_development_port(port):
                     return f'http://{query}'
             except ValueError:
                 pass
@@ -129,24 +129,28 @@ class URLHandler:
             return f'mailto:{query}'
         
         # Domain shortcuts
-        query_lower = query.lower()
-        if query_lower in URLHandler.DOMAIN_SHORTCUTS:
-            return f'https://{URLHandler.DOMAIN_SHORTCUTS[query_lower]}'
+        if enable_shortcuts:
+            query_lower = query.lower()
+            if query_lower in cls.DOMAIN_SHORTCUTS:
+                return f'https://{cls.DOMAIN_SHORTCUTS[query_lower]}'
         
         # Single word without dots - try common extensions
         if re.match(r'^[\w-]+$', query) and len(query) > 1:
-            return f'https://{query}.com'
+            protocol = 'https' if prefer_https else 'http'
+            return f'{protocol}://{query}.com'
         
         # Valid domain structure
-        if '.' in query and URLHandler.is_valid_domain(query):
-            return f'https://{query}'
+        if '.' in query and cls.is_valid_domain(query):
+            protocol = 'https' if prefer_https else 'http'
+            return f'{protocol}://{query}'
         
         # Multi-word or complex queries - search
         if ' ' in query or len(query) < 2 or not re.match(r'^[\w.-]+$', query):
             return f"https://google.com/search?q={quote(query)}"
         
-        # Default: try as HTTPS domain
-        return f'https://{query}'
+        # Default: try as domain
+        protocol = 'https' if prefer_https else 'http'
+        return f'{protocol}://{query}'
 
 
 class SmartBrowserExtension(Extension):
@@ -154,17 +158,50 @@ class SmartBrowserExtension(Extension):
     
     def __init__(self):
         super(SmartBrowserExtension, self).__init__()
+        self.preferences = {
+            'enable_shortcuts': True,
+            'prefer_https': True,
+            'max_suggestions': 5
+        }
         self.subscribe(KeywordQueryEvent, KeywordQueryEventListener())
         self.subscribe(ItemEnterEvent, ItemEnterEventListener())
-        logger.info("SmartBrowserExtension initialized")
+        self.subscribe(PreferencesEvent, PreferencesEventListener())
+        self.subscribe(PreferencesUpdateEvent, PreferencesUpdateEventListener())
+        logger.info("SmartBrowserExtension initialized with default preferences")
+
+
+class PreferencesEventListener(EventListener):
+    """Initialize preferences on start"""
+    
+    def on_event(self, event: PreferencesEvent, extension: SmartBrowserExtension):
+        extension.preferences = {
+            'enable_shortcuts': event.preferences.get('enable_shortcuts', 'true') == 'true',
+            'prefer_https': event.preferences.get('prefer_https', 'true') == 'true',
+            'max_suggestions': int(event.preferences.get('max_suggestions', '5'))
+        }
+        logger.info(f"Preferences loaded: {extension.preferences}")
+
+
+class PreferencesUpdateEventListener(EventListener):
+    """Update preferences when changed"""
+    
+    def on_event(self, event: PreferencesUpdateEvent, extension: SmartBrowserExtension):
+        if event.id == 'enable_shortcuts':
+            extension.preferences['enable_shortcuts'] = event.new_value == 'true'
+        elif event.id == 'prefer_https':
+            extension.preferences['prefer_https'] = event.new_value == 'true'
+        elif event.id == 'max_suggestions':
+            extension.preferences['max_suggestions'] = int(event.new_value)
+        logger.info(f"Updated preference {event.id} to {event.new_value}")
 
 
 class KeywordQueryEventListener(EventListener):
     """Event listener with smart URL suggestions"""
     
-    def on_event(self, event, extension):
+    def on_event(self, event: KeywordQueryEvent, extension: SmartBrowserExtension):
         try:
             query = event.get_argument() or ""
+            prefs = extension.preferences
             
             if not query.strip():
                 return RenderResultListAction([
@@ -179,7 +216,11 @@ class KeywordQueryEventListener(EventListener):
                     )
                 ])
             
-            primary_url = URLHandler.complete_url(query)
+            primary_url = URLHandler.complete_url(
+                query,
+                prefer_https=prefs['prefer_https'],
+                enable_shortcuts=prefs['enable_shortcuts']
+            )
             results = []
             
             # Primary suggestion with smart description
@@ -195,7 +236,12 @@ class KeywordQueryEventListener(EventListener):
             ))
             
             # Alternative suggestions
-            alternatives = self._get_alternatives(query, primary_url)
+            alternatives = self._get_alternatives(
+                query, 
+                primary_url, 
+                prefs['prefer_https'],
+                prefs['enable_shortcuts']
+            )
             for alt_url, alt_description in alternatives:
                 results.append(ExtensionResultItem(
                     icon='images/icon.png',
@@ -207,8 +253,9 @@ class KeywordQueryEventListener(EventListener):
                     )
                 ))
             
-            # Limit results to prevent overwhelming the user
-            return RenderResultListAction(results[:5])
+            # Apply max suggestions preference
+            max_results = min(prefs['max_suggestions'], 7)  # Cap at 7 for safety
+            return RenderResultListAction(results[:max_results])
             
         except Exception as e:
             logger.error(f"Error in KeywordQueryEventListener: {e}")
@@ -248,7 +295,13 @@ class KeywordQueryEventListener(EventListener):
             return url[:57] + "..."
         return url
     
-    def _get_alternatives(self, query: str, primary_url: str) -> List[Tuple[str, str]]:
+    def _get_alternatives(
+        self, 
+        query: str, 
+        primary_url: str,
+        prefer_https: bool,
+        enable_shortcuts: bool
+    ) -> List[Tuple[str, str]]:
         """Generate smart alternative suggestions"""
         alternatives = []
         
@@ -262,21 +315,23 @@ class KeywordQueryEventListener(EventListener):
             query_lower = query.lower()
             
             # If not already using a shortcut, suggest alternatives
-            if query_lower not in URLHandler.DOMAIN_SHORTCUTS:
+            if not (enable_shortcuts and query_lower in URLHandler.DOMAIN_SHORTCUTS):
+                protocol = 'https' if prefer_https else 'http'
+                
                 if not primary_url.endswith('.org'):
-                    alternatives.append((f"https://{query}.org", "Try .org domain"))
+                    alternatives.append((f"{protocol}://{query}.org", "Try .org domain"))
                 if not primary_url.endswith('.net'):
-                    alternatives.append((f"https://{query}.net", "Try .net domain"))
+                    alternatives.append((f"{protocol}://{query}.net", "Try .net domain"))
                 if not primary_url.endswith('.io'):
-                    alternatives.append((f"https://{query}.io", "Try .io domain"))
+                    alternatives.append((f"{protocol}://{query}.io", "Try .io domain"))
         
         # HTTPS upgrade for HTTP URLs (but not HTTP to HTTPS downgrade)
-        if primary_url.startswith('http://') and not any(local in primary_url for local in ['localhost', '127.0.0.1', '192.168.']):
+        if prefer_https and primary_url.startswith('http://') and not any(local in primary_url for local in ['localhost', '127.0.0.1', '192.168.']):
             https_version = primary_url.replace('http://', 'https://', 1)
             alternatives.append((https_version, "Try HTTPS version"))
         
         # Special shortcuts suggestions
-        if len(query) > 2 and not query.lower() in URLHandler.DOMAIN_SHORTCUTS:
+        if enable_shortcuts and len(query) > 2 and not query.lower() in URLHandler.DOMAIN_SHORTCUTS:
             matching_shortcuts = [k for k in URLHandler.DOMAIN_SHORTCUTS.keys() 
                                  if k.startswith(query.lower()) or query.lower() in k]
             for shortcut in matching_shortcuts[:2]:
@@ -290,7 +345,7 @@ class KeywordQueryEventListener(EventListener):
 class ItemEnterEventListener(EventListener):
     """Event listener for handling URL opening"""
     
-    def on_event(self, event, extension):
+    def on_event(self, event: ItemEnterEvent, extension: SmartBrowserExtension):
         try:
             data = event.get_data()
             url = data.get("url")
