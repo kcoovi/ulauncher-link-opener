@@ -37,9 +37,9 @@ Built-in shortcuts for popular websites:
 ### Method 1: Manual Installation
 1. Clone or download this repository
 2. Copy the extension folder to your Ulauncher extensions directory:
-   ```bash
+```bash
    ~/.local/share/ulauncher/extensions/
-   ```
+```
 3. Restart Ulaunicher or go to Preferences → Extensions → Reload Extensions
 
 ### Method 2: From Ulauncher Extensions Directory
