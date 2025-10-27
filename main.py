@@ -161,7 +161,8 @@ class SmartBrowserExtension(Extension):
         self.preferences = {
             'enable_shortcuts': True,
             'prefer_https': True,
-            'max_suggestions': 5
+            'max_suggestions': 5,
+            'show_ai_search': True  # New preference for AI search
         }
         self.subscribe(KeywordQueryEvent, KeywordQueryEventListener())
         self.subscribe(ItemEnterEvent, ItemEnterEventListener())
@@ -177,7 +178,8 @@ class PreferencesEventListener(EventListener):
         extension.preferences = {
             'enable_shortcuts': event.preferences.get('enable_shortcuts', 'true') == 'true',
             'prefer_https': event.preferences.get('prefer_https', 'true') == 'true',
-            'max_suggestions': int(event.preferences.get('max_suggestions', '5'))
+            'max_suggestions': int(event.preferences.get('max_suggestions', '5')),
+            'show_ai_search': event.preferences.get('show_ai_search', 'true') == 'true'
         }
         logger.info(f"Preferences loaded: {extension.preferences}")
 
@@ -192,6 +194,8 @@ class PreferencesUpdateEventListener(EventListener):
             extension.preferences['prefer_https'] = event.new_value == 'true'
         elif event.id == 'max_suggestions':
             extension.preferences['max_suggestions'] = int(event.new_value)
+        elif event.id == 'show_ai_search':
+            extension.preferences['show_ai_search'] = event.new_value == 'true'
         logger.info(f"Updated preference {event.id} to {event.new_value}")
 
 
@@ -240,7 +244,8 @@ class KeywordQueryEventListener(EventListener):
                 query, 
                 primary_url, 
                 prefs['prefer_https'],
-                prefs['enable_shortcuts']
+                prefs['enable_shortcuts'],
+                prefs['show_ai_search']
             )
             for alt_url, alt_description in alternatives:
                 results.append(ExtensionResultItem(
@@ -279,6 +284,8 @@ class KeywordQueryEventListener(EventListener):
             return "Open local file"
         elif 'google.com/search' in url:
             return "Search on Google"
+        elif 'gemini.google.com' in url:
+            return "🤖 Ask Google AI (Gemini)"
         elif url.startswith('http://localhost') or 'http://127.0.0.1' in url:
             return "Open local development server"
         elif any(port in url for port in [':3000', ':8000', ':8080']):
@@ -288,7 +295,12 @@ class KeywordQueryEventListener(EventListener):
     
     def _format_url_display(self, url: str) -> str:
         """Format URL for display"""
-        if len(url) > 60:
+        if 'gemini.google.com' in url and 'text=' in url:
+            # Special formatting for Gemini queries
+            parsed = urlparse(url)
+            query_text = parsed.path.split('text=')[-1][:30]
+            return f"🤖 Gemini: {query_text}..."
+        elif len(url) > 60:
             parsed = urlparse(url)
             if parsed.netloc:
                 return f"{parsed.scheme}://{parsed.netloc}/..."
@@ -300,15 +312,27 @@ class KeywordQueryEventListener(EventListener):
         query: str, 
         primary_url: str,
         prefer_https: bool,
-        enable_shortcuts: bool
+        enable_shortcuts: bool,
+        show_ai_search: bool
     ) -> List[Tuple[str, str]]:
-        """Generate smart alternative suggestions"""
+        """Generate smart alternative suggestions including AI search"""
         alternatives = []
         
         # Always offer search if primary isn't already a search
         if 'google.com/search' not in primary_url:
             search_url = f"https://google.com/search?q={quote(query)}"
-            alternatives.append((search_url, "Search on Google"))
+            alternatives.append((search_url, "🔍 Search on Google"))
+            
+            # Add Google AI (Gemini) search option if enabled
+            if show_ai_search and len(query.strip()) > 0:
+                # Gemini web app URL with query
+                gemini_url = f"https://gemini.google.com/app?q={quote(query)}"
+                alternatives.append((gemini_url, "🤖 Ask Google AI (Gemini)"))
+        
+        # If primary is already a Google search, offer Gemini as first alternative
+        elif 'google.com/search' in primary_url and show_ai_search:
+            gemini_url = f"https://gemini.google.com/app?q={quote(query)}"
+            alternatives.insert(0, (gemini_url, "🤖 Ask Google AI (Gemini) instead"))
         
         # Domain alternatives for single words
         if re.match(r'^[\w-]+$', query) and len(query) > 1:
@@ -328,7 +352,7 @@ class KeywordQueryEventListener(EventListener):
         # HTTPS upgrade for HTTP URLs (but not HTTP to HTTPS downgrade)
         if prefer_https and primary_url.startswith('http://') and not any(local in primary_url for local in ['localhost', '127.0.0.1', '192.168.']):
             https_version = primary_url.replace('http://', 'https://', 1)
-            alternatives.append((https_version, "Try HTTPS version"))
+            alternatives.append((https_version, "🔒 Try HTTPS version"))
         
         # Special shortcuts suggestions
         if enable_shortcuts and len(query) > 2 and not query.lower() in URLHandler.DOMAIN_SHORTCUTS:
@@ -337,9 +361,9 @@ class KeywordQueryEventListener(EventListener):
             for shortcut in matching_shortcuts[:2]:
                 shortcut_url = f"https://{URLHandler.DOMAIN_SHORTCUTS[shortcut]}"
                 if shortcut_url != primary_url:
-                    alternatives.append((shortcut_url, f"Shortcut: {shortcut} → {URLHandler.DOMAIN_SHORTCUTS[shortcut]}"))
+                    alternatives.append((shortcut_url, f"⚡ Shortcut: {shortcut} → {URLHandler.DOMAIN_SHORTCUTS[shortcut]}"))
         
-        return alternatives[:3]  # Limit alternatives
+        return alternatives[:4]  # Slightly increased limit to accommodate AI search
 
 
 class ItemEnterEventListener(EventListener):
