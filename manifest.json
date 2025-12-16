@@ -1,13 +1,43 @@
 {
-    "required_api_version": "^2.0.0",
-    "name": "Smart URL Opener",
-    "description": "Intelligent URL completion and opening with shortcuts, local development support, and smart suggestions",
-    "developer_name": "Kevin Coovi",
-    "icon": "images/icon.png",
-    "preferences": [{
-        "id": "browser_kw",
-        "type": "keyword",
-        "name": "Open URL",
-        "default_value": "go"
-    }]
+  "required_api_version": "^2.0.0",
+  "name": "Smart URL Opener",
+  "description": "Intelligent URL completion with custom search engines, local dev shortcuts, and clipboard support.",
+  "developer_name": "Kevin Coovi",
+  "icon": "images/icon.png",
+  "preferences": [
+    {
+      "id": "browser_kw",
+      "type": "keyword",
+      "name": "Open URL",
+      "default_value": "go"
+    },
+    {
+      "id": "search_engine",
+      "type": "text",
+      "name": "Search Engine",
+      "description": "Options: google, duckduckgo, bing, brave, ecosia, yandex",
+      "default_value": "google"
+    },
+    {
+      "id": "prefer_https",
+      "type": "checkbox",
+      "name": "Prefer HTTPS",
+      "description": "Default to HTTPS for domains without a specified protocol",
+      "default_value": true
+    },
+    {
+      "id": "enable_shortcuts",
+      "type": "checkbox",
+      "name": "Enable Shortcuts",
+      "description": "Enable shortcuts like 'gh' (Github), 'yt' (Youtube), 'lh' (Localhost)",
+      "default_value": true
+    },
+    {
+      "id": "max_suggestions",
+      "type": "text",
+      "name": "Max Suggestions",
+      "description": "Number of items to show in the list",
+      "default_value": "5"
+    }
+  ]
 }
