@@ -16,37 +16,37 @@
       "type": "select",
       "name": "Search Engine",
       "description": "Select your preferred search engine",
-      "default_value": "google",
-      "options": {
-        "google": "Google",
-        "duckduckgo": "DuckDuckGo",
-        "bing": "Bing",
-        "brave": "Brave",
-        "ecosia": "Ecosia",
-        "yandex": "Yandex"
-      }
+      "default_value": "Google",
+      "options": [
+        "Google",
+        "DuckDuckGo",
+        "Bing",
+        "Brave",
+        "Ecosia",
+        "Yandex"
+      ]
     },
     {
       "id": "prefer_https",
       "type": "select",
       "name": "Prefer HTTPS",
       "description": "Default to HTTPS for domains without a specified protocol",
-      "default_value": "true",
-      "options": {
-        "true": "Yes",
-        "false": "No"
-      }
+      "default_value": "Yes",
+      "options": [
+        "Yes",
+        "No"
+      ]
     },
     {
       "id": "enable_shortcuts",
       "type": "select",
       "name": "Enable Shortcuts",
       "description": "Enable shortcuts like 'gh' (Github), 'yt' (Youtube)",
-      "default_value": "true",
-      "options": {
-        "true": "Yes",
-        "false": "No"
-      }
+      "default_value": "Yes",
+      "options": [
+        "Yes",
+        "No"
+      ]
     },
     {
       "id": "max_suggestions",
