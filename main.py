@@ -232,11 +232,15 @@ class KeywordQueryEventListener(EventListener):
                     on_alt_enter=CopyToClipboardAction(alt_url)
                 ))
             
-            limit = prefs.get('max_suggestions', 5)
+            # FIX: Ensure limit is always an integer
+            try:
+                limit = int(prefs.get('max_suggestions', 5))
+            except (ValueError, TypeError):
+                limit = 5
+            
             return RenderResultListAction(results[:limit])
 
         except Exception as e:
-            # THIS IS THE FIX: Catch the crash and show it to the user
             logger.error(f"CRITICAL ERROR: {e}", exc_info=True)
             return RenderResultListAction([
                 ExtensionResultItem(
