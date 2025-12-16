@@ -150,14 +150,16 @@ class SmartBrowserExtension(Extension):
 class PreferencesEventListener(EventListener):
     """Initialize preferences on start"""
     def on_event(self, event: PreferencesEvent, extension: SmartBrowserExtension):
-        # Convert 'true'/'false' strings from select to boolean
-        extension.preferences['enable_shortcuts'] = str(event.preferences.get('enable_shortcuts', 'true')).lower() == 'true'
-        extension.preferences['prefer_https'] = str(event.preferences.get('prefer_https', 'true')).lower() == 'true'
+        # Convert 'Yes'/'No' strings from select to boolean
+        extension.preferences['enable_shortcuts'] = event.preferences.get('enable_shortcuts', 'Yes') == 'Yes'
+        extension.preferences['prefer_https'] = event.preferences.get('prefer_https', 'Yes') == 'Yes'
+        
         try:
             extension.preferences['max_suggestions'] = int(event.preferences.get('max_suggestions', '5'))
         except ValueError:
             extension.preferences['max_suggestions'] = 5
-        extension.preferences['search_engine'] = event.preferences.get('search_engine', 'google')
+            
+        extension.preferences['search_engine'] = event.preferences.get('search_engine', 'Google')
 
 
 class PreferencesUpdateEventListener(EventListener):
@@ -169,8 +171,8 @@ class PreferencesUpdateEventListener(EventListener):
             except ValueError:
                 pass
         elif event.id in ['enable_shortcuts', 'prefer_https']:
-            # Handle boolean conversion from select string values
-            extension.preferences[event.id] = str(event.new_value).lower() == 'true'
+            # Handle boolean conversion from 'Yes'/'No'
+            extension.preferences[event.id] = event.new_value == 'Yes'
         else:
             extension.preferences[event.id] = event.new_value
 
@@ -183,13 +185,14 @@ class KeywordQueryEventListener(EventListener):
         prefs = extension.preferences
         
         # Handle empty query
+        engine_key = prefs['search_engine'].lower()
         if not query.strip():
-            engine_name = prefs['search_engine'].title() if prefs['search_engine'] in URLHandler.SEARCH_ENGINES else 'Google'
+            engine_display = prefs['search_engine']
             return RenderResultListAction([
                 ExtensionResultItem(
                     icon='images/icon.png',
                     name="Smart URL Opener",
-                    description=f"Type to search on {engine_name} or enter a URL",
+                    description=f"Type to search on {engine_display} or enter a URL",
                     on_enter=ExtensionCustomAction({"url": "about:blank"}, keep_app_open=False)
                 )
             ])
@@ -231,7 +234,7 @@ class KeywordQueryEventListener(EventListener):
         if url.startswith('mailto:'): return "Send email"
         if url.startswith('file://'): return "Open local file"
         if 'search?q=' in url or '/?q=' in url or 'search/?text=' in url: 
-            return f"Search on {search_engine.title()}"
+            return f"Search on {search_engine}"
         if 'localhost' in url or '127.0.0.1' in url: return "Open local server"
         return "Open website (Alt+Enter to copy)"
 
@@ -242,14 +245,17 @@ class KeywordQueryEventListener(EventListener):
 
     def _get_alternatives(self, query: str, primary_url: str, prefs: dict) -> List[Tuple[str, str]]:
         alts = []
-        engine = prefs['search_engine'].lower()
-        if engine not in URLHandler.SEARCH_ENGINES: engine = 'google'
+        engine_key = prefs['search_engine'].lower().strip()
+        engine_display = prefs['search_engine']
+        if engine_key not in URLHandler.SEARCH_ENGINES: 
+            engine_key = 'google'
+            engine_display = 'Google'
         
         # If primary IS NOT a search, offer search
         is_search = 'search?q=' in primary_url or '/?q=' in primary_url or 'search/?text=' in primary_url
         if not is_search:
-            search_url = URLHandler.SEARCH_ENGINES[engine].format(quote(query))
-            alts.append((search_url, f"🔍 Search on {engine.title()}"))
+            search_url = URLHandler.SEARCH_ENGINES[engine_key].format(quote(query))
+            alts.append((search_url, f"🔍 Search on {engine_display}"))
         
         # If query looks like a plain word, suggest TLDs
         if re.match(r'^[\w-]+$', query) and len(query) > 1:
