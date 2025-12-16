@@ -150,8 +150,9 @@ class SmartBrowserExtension(Extension):
 class PreferencesEventListener(EventListener):
     """Initialize preferences on start"""
     def on_event(self, event: PreferencesEvent, extension: SmartBrowserExtension):
-        extension.preferences['enable_shortcuts'] = event.preferences.get('enable_shortcuts', 'true') == 'true'
-        extension.preferences['prefer_https'] = event.preferences.get('prefer_https', 'true') == 'true'
+        # Convert 'true'/'false' strings from select to boolean
+        extension.preferences['enable_shortcuts'] = str(event.preferences.get('enable_shortcuts', 'true')).lower() == 'true'
+        extension.preferences['prefer_https'] = str(event.preferences.get('prefer_https', 'true')).lower() == 'true'
         try:
             extension.preferences['max_suggestions'] = int(event.preferences.get('max_suggestions', '5'))
         except ValueError:
@@ -168,7 +169,8 @@ class PreferencesUpdateEventListener(EventListener):
             except ValueError:
                 pass
         elif event.id in ['enable_shortcuts', 'prefer_https']:
-            extension.preferences[event.id] = event.new_value == 'true'
+            # Handle boolean conversion from select string values
+            extension.preferences[event.id] = str(event.new_value).lower() == 'true'
         else:
             extension.preferences[event.id] = event.new_value
 
