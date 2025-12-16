@@ -37,17 +37,7 @@
         "No"
       ]
     },
-    {
-      "id": "enable_shortcuts",
-      "type": "select",
-      "name": "Enable Shortcuts",
-      "description": "Enable shortcuts like 'gh' (Github), 'yt' (Youtube)",
-      "default_value": "Yes",
-      "options": [
-        "Yes",
-        "No"
-      ]
-    },
+    
     {
       "id": "max_suggestions",
       "type": "text",
