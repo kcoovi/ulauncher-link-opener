@@ -52,7 +52,7 @@
       "id": "max_suggestions",
       "type": "text",
       "name": "Max Suggestions",
-      "description": "Number of items to show in the list",
+      "description": "Number of suggestions to show in the list, max is 5",
       "default_value": "5"
     }
   ]
