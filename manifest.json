@@ -1,59 +1,59 @@
 {
-    "required_api_version": "^2.0.0",
-    "name": "Smart URL Opener",
-    "description": "Intelligent URL completion with custom search engines, local dev shortcuts, and clipboard support.",
-    "developer_name": "Kevin Coovi",
-    "icon": "images/icon.png",
-    "preferences": [
-        {
-            "id": "browser_kw",
-            "type": "keyword",
-            "name": "Open URL",
-            "default_value": "go"
-        },
-        {
-            "id": "search_engine",
-            "type": "select",
-            "name": "Search Engine",
-            "description": "Select your preferred search engine",
-            "default_value": "google",
-            "options": [
-                { "value": "google", "label": "Google" },
-                { "value": "duckduckgo", "label": "DuckDuckGo" },
-                { "value": "bing", "label": "Bing" },
-                { "value": "brave", "label": "Brave" },
-                { "value": "ecosia", "label": "Ecosia" },
-                { "value": "yandex", "label": "Yandex" }
-            ]
-        },
-        {
-            "id": "prefer_https",
-            "type": "select",
-            "name": "Prefer HTTPS",
-            "description": "Default to HTTPS for domains without a specified protocol",
-            "default_value": "true",
-            "options": [
-                { "value": "true", "label": "Yes" },
-                { "value": "false", "label": "No" }
-            ]
-        },
-        {
-            "id": "enable_shortcuts",
-            "type": "select",
-            "name": "Enable Shortcuts",
-            "description": "Enable shortcuts like 'gh' (Github), 'yt' (Youtube)",
-            "default_value": "true",
-            "options": [
-                { "value": "true", "label": "Yes" },
-                { "value": "false", "label": "No" }
-            ]
-        },
-        {
-            "id": "max_suggestions",
-            "type": "text",
-            "name": "Max Suggestions",
-            "description": "Number of items to show in the list",
-            "default_value": "5"
-        }
-    ]
+  "required_api_version": "^2.0.0",
+  "name": "Smart URL Opener",
+  "description": "Intelligent URL completion with custom search engines, local dev shortcuts, and clipboard support.",
+  "developer_name": "Kevin Coovi",
+  "icon": "images/icon.png",
+  "preferences": [
+    {
+      "id": "browser_kw",
+      "type": "keyword",
+      "name": "Open URL",
+      "default_value": "go"
+    },
+    {
+      "id": "search_engine",
+      "type": "select",
+      "name": "Search Engine",
+      "description": "Select your preferred search engine",
+      "default_value": "google",
+      "options": {
+        "google": "Google",
+        "duckduckgo": "DuckDuckGo",
+        "bing": "Bing",
+        "brave": "Brave",
+        "ecosia": "Ecosia",
+        "yandex": "Yandex"
+      }
+    },
+    {
+      "id": "prefer_https",
+      "type": "select",
+      "name": "Prefer HTTPS",
+      "description": "Default to HTTPS for domains without a specified protocol",
+      "default_value": "true",
+      "options": {
+        "true": "Yes",
+        "false": "No"
+      }
+    },
+    {
+      "id": "enable_shortcuts",
+      "type": "select",
+      "name": "Enable Shortcuts",
+      "description": "Enable shortcuts like 'gh' (Github), 'yt' (Youtube)",
+      "default_value": "true",
+      "options": {
+        "true": "Yes",
+        "false": "No"
+      }
+    },
+    {
+      "id": "max_suggestions",
+      "type": "text",
+      "name": "Max Suggestions",
+      "description": "Number of items to show in the list",
+      "default_value": "5"
+    }
+  ]
 }
