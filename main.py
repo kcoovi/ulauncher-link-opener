@@ -70,8 +70,8 @@ class URLHandler:
     def complete_url(cls, query: str, prefer_https: bool = True, enable_shortcuts: bool = True, search_engine: str = 'google') -> str:
         """Enhanced URL completion with intelligent handling"""
         
-        # Default to Google if engine config is invalid
-        engine_key = search_engine.lower().strip()
+        # Safe handling of search engine key
+        engine_key = str(search_engine).lower().strip()
         if engine_key not in cls.SEARCH_ENGINES:
             engine_key = 'google'
             
@@ -116,7 +116,7 @@ class URLHandler:
                 proto = 'http' if 'localhost' in target else ('https' if prefer_https else 'http')
                 return f'{proto}://{target}'
         
-        # Single word without dots - try com/net/org if it looks like a domain word
+        # Single word without dots - try com
         if re.match(r'^[a-zA-Z0-9-]+$', query) and len(query) > 1:
             protocol = 'https' if prefer_https else 'http'
             return f'{protocol}://{query}.com'
@@ -135,11 +135,12 @@ class SmartBrowserExtension(Extension):
     
     def __init__(self):
         super(SmartBrowserExtension, self).__init__()
+        # Default preferences to avoid startup errors
         self.preferences = {
             'enable_shortcuts': True,
             'prefer_https': True,
             'max_suggestions': 5,
-            'search_engine': 'google'
+            'search_engine': 'Google'
         }
         self.subscribe(KeywordQueryEvent, KeywordQueryEventListener())
         self.subscribe(ItemEnterEvent, ItemEnterEventListener())
@@ -150,13 +151,14 @@ class SmartBrowserExtension(Extension):
 class PreferencesEventListener(EventListener):
     """Initialize preferences on start"""
     def on_event(self, event: PreferencesEvent, extension: SmartBrowserExtension):
-        # Convert 'Yes'/'No' strings from select to boolean
+        # Convert 'Yes'/'No' strings from select to boolean safely
         extension.preferences['enable_shortcuts'] = event.preferences.get('enable_shortcuts', 'Yes') == 'Yes'
         extension.preferences['prefer_https'] = event.preferences.get('prefer_https', 'Yes') == 'Yes'
         
         try:
-            extension.preferences['max_suggestions'] = int(event.preferences.get('max_suggestions', '5'))
-        except ValueError:
+            val = event.preferences.get('max_suggestions', '5')
+            extension.preferences['max_suggestions'] = int(val)
+        except (ValueError, TypeError):
             extension.preferences['max_suggestions'] = 5
             
         extension.preferences['search_engine'] = event.preferences.get('search_engine', 'Google')
@@ -168,7 +170,7 @@ class PreferencesUpdateEventListener(EventListener):
         if event.id == 'max_suggestions':
             try:
                 extension.preferences[event.id] = int(event.new_value)
-            except ValueError:
+            except (ValueError, TypeError):
                 pass
         elif event.id in ['enable_shortcuts', 'prefer_https']:
             # Handle boolean conversion from 'Yes'/'No'
@@ -181,54 +183,69 @@ class KeywordQueryEventListener(EventListener):
     """Event listener with smart URL suggestions"""
     
     def on_event(self, event: KeywordQueryEvent, extension: SmartBrowserExtension):
-        query = event.get_argument() or ""
-        prefs = extension.preferences
-        
-        # Handle empty query
-        engine_key = prefs['search_engine'].lower()
-        if not query.strip():
-            engine_display = prefs['search_engine']
+        try:
+            query = event.get_argument() or ""
+            prefs = extension.preferences
+            
+            # Handle empty query
+            engine_key = str(prefs.get('search_engine', 'Google')).lower()
+            engine_display = prefs.get('search_engine', 'Google')
+            
+            if not query.strip():
+                return RenderResultListAction([
+                    ExtensionResultItem(
+                        icon='images/icon.png',
+                        name="Smart URL Opener",
+                        description=f"Type to search on {engine_display} or enter a URL",
+                        on_enter=ExtensionCustomAction({"url": "about:blank"}, keep_app_open=False)
+                    )
+                ])
+            
+            # Get Primary URL
+            primary_url = URLHandler.complete_url(
+                query,
+                prefer_https=prefs.get('prefer_https', True),
+                enable_shortcuts=prefs.get('enable_shortcuts', True),
+                search_engine=prefs.get('search_engine', 'Google')
+            )
+            
+            results = []
+            
+            # 1. Primary Result
+            results.append(ExtensionResultItem(
+                icon='images/icon.png',
+                name=self._format_url_display(primary_url),
+                description=self._get_description(primary_url, engine_display),
+                on_enter=ExtensionCustomAction({"url": primary_url}, keep_app_open=False),
+                on_alt_enter=CopyToClipboardAction(primary_url)
+            ))
+            
+            # 2. Generate Alternatives
+            alternatives = self._get_alternatives(query, primary_url, prefs)
+            
+            for alt_url, alt_desc in alternatives:
+                results.append(ExtensionResultItem(
+                    icon='images/icon.png',
+                    name=self._format_url_display(alt_url),
+                    description=alt_desc,
+                    on_enter=ExtensionCustomAction({"url": alt_url}, keep_app_open=False),
+                    on_alt_enter=CopyToClipboardAction(alt_url)
+                ))
+            
+            limit = prefs.get('max_suggestions', 5)
+            return RenderResultListAction(results[:limit])
+
+        except Exception as e:
+            # THIS IS THE FIX: Catch the crash and show it to the user
+            logger.error(f"CRITICAL ERROR: {e}", exc_info=True)
             return RenderResultListAction([
                 ExtensionResultItem(
                     icon='images/icon.png',
-                    name="Smart URL Opener",
-                    description=f"Type to search on {engine_display} or enter a URL",
+                    name="Extension Error",
+                    description=f"Error: {str(e)[:50]}...",
                     on_enter=ExtensionCustomAction({"url": "about:blank"}, keep_app_open=False)
                 )
             ])
-        
-        # Get Primary URL
-        primary_url = URLHandler.complete_url(
-            query,
-            prefer_https=prefs['prefer_https'],
-            enable_shortcuts=prefs['enable_shortcuts'],
-            search_engine=prefs['search_engine']
-        )
-        
-        results = []
-        
-        # 1. Primary Result
-        results.append(ExtensionResultItem(
-            icon='images/icon.png',
-            name=self._format_url_display(primary_url),
-            description=self._get_description(primary_url, prefs['search_engine']),
-            on_enter=ExtensionCustomAction({"url": primary_url}, keep_app_open=False),
-            on_alt_enter=CopyToClipboardAction(primary_url)
-        ))
-        
-        # 2. Generate Alternatives
-        alternatives = self._get_alternatives(query, primary_url, prefs)
-        
-        for alt_url, alt_desc in alternatives:
-            results.append(ExtensionResultItem(
-                icon='images/icon.png',
-                name=self._format_url_display(alt_url),
-                description=alt_desc,
-                on_enter=ExtensionCustomAction({"url": alt_url}, keep_app_open=False),
-                on_alt_enter=CopyToClipboardAction(alt_url)
-            ))
-        
-        return RenderResultListAction(results[:prefs['max_suggestions']])
 
     def _get_description(self, url: str, search_engine: str) -> str:
         if url.startswith('mailto:'): return "Send email"
@@ -245,11 +262,11 @@ class KeywordQueryEventListener(EventListener):
 
     def _get_alternatives(self, query: str, primary_url: str, prefs: dict) -> List[Tuple[str, str]]:
         alts = []
-        engine_key = prefs['search_engine'].lower().strip()
-        engine_display = prefs['search_engine']
+        engine_key = str(prefs.get('search_engine', 'Google')).lower().strip()
+        engine_display = prefs.get('search_engine', 'Google')
+        
         if engine_key not in URLHandler.SEARCH_ENGINES: 
             engine_key = 'google'
-            engine_display = 'Google'
         
         # If primary IS NOT a search, offer search
         is_search = 'search?q=' in primary_url or '/?q=' in primary_url or 'search/?text=' in primary_url
@@ -259,7 +276,7 @@ class KeywordQueryEventListener(EventListener):
         
         # If query looks like a plain word, suggest TLDs
         if re.match(r'^[\w-]+$', query) and len(query) > 1:
-            protocol = 'https' if prefs['prefer_https'] else 'http'
+            protocol = 'https' if prefs.get('prefer_https', True) else 'http'
             
             # Suggest .net/.org if primary ended up being .com
             if primary_url.endswith('.com'):
