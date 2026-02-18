@@ -16,6 +16,9 @@ from typing import List, Tuple
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Constants
+ICON = 'images/icon.png'
+
 class URLHandler:
     """Enhanced URL handling with intelligent completion and validation"""
     
@@ -100,7 +103,7 @@ class URLHandler:
             return f'http://{query}' # Default to http for IPs usually
         
         # Localhost variants
-        if query.startswith('localhost') or re.match(r'^localhost:\d+', query):
+        if query.startswith('localhost'):
             return f'http://{query}'
         
         # Email address
@@ -194,7 +197,7 @@ class KeywordQueryEventListener(EventListener):
             if not query.strip():
                 return RenderResultListAction([
                     ExtensionResultItem(
-                        icon='images/icon.png',
+                        icon=ICON,
                         name="Smart URL Opener",
                         description=f"Type to search on {engine_display} or enter a URL",
                         on_enter=ExtensionCustomAction({"url": "about:blank"}, keep_app_open=False)
@@ -213,7 +216,7 @@ class KeywordQueryEventListener(EventListener):
             
             # 1. Primary Result
             results.append(ExtensionResultItem(
-                icon='images/icon.png',
+                icon=ICON,
                 name=self._format_url_display(primary_url),
                 description=self._get_description(primary_url, engine_display),
                 on_enter=ExtensionCustomAction({"url": primary_url}, keep_app_open=False),
@@ -225,7 +228,7 @@ class KeywordQueryEventListener(EventListener):
             
             for alt_url, alt_desc in alternatives:
                 results.append(ExtensionResultItem(
-                    icon='images/icon.png',
+                    icon=ICON,
                     name=self._format_url_display(alt_url),
                     description=alt_desc,
                     on_enter=ExtensionCustomAction({"url": alt_url}, keep_app_open=False),
@@ -244,7 +247,7 @@ class KeywordQueryEventListener(EventListener):
             logger.error(f"CRITICAL ERROR: {e}", exc_info=True)
             return RenderResultListAction([
                 ExtensionResultItem(
-                    icon='images/icon.png',
+                    icon=ICON,
                     name="Extension Error",
                     description=f"Error: {str(e)[:50]}...",
                     on_enter=ExtensionCustomAction({"url": "about:blank"}, keep_app_open=False)

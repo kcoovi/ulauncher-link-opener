@@ -145,10 +145,6 @@ smart-url-opener/
 If you type a domain (e.g., `myserver.local`), the extension suggests the default protocol. However, it also provides an alternative option in the dropdown list to **force** the opposite protocol. 
 *   Example: If it suggests `https://myserver.local`, the second option will be `http://myserver.local` (Force HTTP).
 
-### Development Port Detection
-The extension recognizes common development ports and automatically uses HTTP:
-- 3000, 3001, 4200, 5000, 5173, 8000, 8080, 8888, 9000+
-
 ## Troubleshooting
 ### Extension Error in Results
 If the extension crashes, the error message will now appear directly in the Ulauncher result list instead of loading indefinitely. 
@@ -172,4 +168,3 @@ This project is open source. Feel free to modify and distribute according to you
 - **New:** Localhost shortcuts (`lh`, `lh8`).
 - **Improved:** Protocol handling with Force HTTP/HTTPS options.
 - **Removed:** AI/Gemini integration.
-```
